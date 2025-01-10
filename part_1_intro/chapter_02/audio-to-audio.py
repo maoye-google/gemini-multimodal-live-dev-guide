@@ -39,6 +39,8 @@ CONFIG = {
     "system_instruction": "Always start your sentence with 'mate'."
 }
 
+CONVERSATION_TURN=5
+
 async def audio_loop():
     audio_queue = asyncio.Queue()
     model_speaking = False
@@ -47,6 +49,7 @@ async def audio_loop():
     pya = pyaudio.PyAudio()
     mic_info = pya.get_default_input_device_info()
 
+    conversation_turn_number = 0
     try:
         async with (
             client.aio.live.connect(model=MODEL, config=CONFIG) as session,
@@ -65,22 +68,29 @@ async def audio_loop():
                 pya.open, format=FORMAT, channels=CHANNELS, rate=RECEIVE_SAMPLE_RATE, output=True
             )
 
+            
             async def listen_and_send():
                 nonlocal model_speaking
-                while True:
+                nonlocal conversation_turn_number
+                while conversation_turn_number < CONVERSATION_TURN:
+                # while True:
                     if not model_speaking:
                         try:
                             data = await asyncio.to_thread(input_stream.read, CHUNK_SIZE, exception_on_overflow=False)
-                            await session.send({"data": data, "mime_type": "audio/pcm"}, end_of_turn=True)
+                            await session.send(input={"data": data, "mime_type": "audio/pcm"}, end_of_turn=True)
                         except OSError as e:
                             print(f"Audio input error: {e}")
                             await asyncio.sleep(0.1)
                     else:
                         await asyncio.sleep(0.1)
 
+                print(f"Already {CONVERSATION_TURN} Turns ! Please Shutdown the Program")
+
             async def receive_and_play():
                 nonlocal model_speaking
-                while True:
+                nonlocal conversation_turn_number
+                # while True:
+                while conversation_turn_number < CONVERSATION_TURN:
                     async for response in session.receive():
                         server_content = response.server_content
                         if server_content and server_content.model_turn:
@@ -92,7 +102,9 @@ async def audio_loop():
                         if server_content and server_content.turn_complete:
                             print("Turn complete")
                             model_speaking = False
-
+                            conversation_turn_number=conversation_turn_number+1
+                #exit code
+                print(f"Already {CONVERSATION_TURN} Turns ! Please Shutdown the Program")
             tg.create_task(listen_and_send())
             tg.create_task(receive_and_play())
 
