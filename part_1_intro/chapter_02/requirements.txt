@@ -1,0 +1,5 @@
+google>=3.0
+google-cloud-pubsub==2.13.4
+google-genai>=0.4
+pyaudio>=0.2
+jproperties>=2.0

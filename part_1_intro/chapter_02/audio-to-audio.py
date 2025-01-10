@@ -15,7 +15,7 @@
 import asyncio
 import traceback
 import pyaudio
-
+from jproperties import Properties
 from google import genai
 
 FORMAT = pyaudio.paInt16
@@ -26,7 +26,13 @@ CHUNK_SIZE = 512
 
 MODEL = "models/gemini-2.0-flash-exp"
 
-client = genai.Client(http_options={'api_version': 'v1alpha'})
+
+
+configs = Properties()
+with open('../../configurations/aistudio_config.properties', 'rb') as config_file:
+    configs.load(config_file)
+
+client = genai.Client(http_options={'api_version': 'v1alpha'}, api_key=configs.get('aistudio_api_key').data)
 
 CONFIG = {
     "generation_config": {"response_modalities": ["AUDIO"], "speech_config": "Puck"},
